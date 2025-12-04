@@ -7,10 +7,17 @@ import csv
 import time
 from typing import List, Tuple, Dict, Optional
 
-# -------------------------
-# Small tooltip helper
-# -------------------------
+
+# ==========================================
+# HELPER CLASSES
+# ==========================================
+
 class ToolTip:
+    """
+    Displays a small pop-up box with text when hovering over a widget.
+    Great for UX/Accessibility.
+    """
+
     def __init__(self, widget, text):
         self.widget = widget
         self.text = text
@@ -35,10 +42,17 @@ class ToolTip:
             self.tip.destroy()
             self.tip = None
 
-# -------------------------
-# Algorithms encapsulation
-# -------------------------
+
+# ==========================================
+# ALGORITHM LOGIC (THE "MODEL")
+# ==========================================
+
 class PageReplacementAlgorithms:
+    """
+    Pure logic class.
+    Returns: (Faults, Hits, Frame_Snapshots_Over_Time)
+    """
+
     @staticmethod
     def fifo(pages: List[int], capacity: int) -> Tuple[int, int, List[List[Optional[int]]]]:
         memory: List[Optional[int]] = []
@@ -54,7 +68,7 @@ class PageReplacementAlgorithms:
                 page_faults += 1
             else:
                 hits += 1
-            # record snapshot of frames (pad with None to fixed length)
+            # Record snapshot (pad with None to maintain fixed size for visualization)
             frames_over_time.append(list(memory) + [None] * max(0, capacity - len(memory)))
 
         return page_faults, hits, frames_over_time
@@ -73,7 +87,7 @@ class PageReplacementAlgorithms:
                 memory.append(page)
                 page_faults += 1
             else:
-                # move to end (most recently used)
+                # Move to end (mark as most recently used)
                 memory.remove(page)
                 memory.append(page)
                 hits += 1
@@ -88,7 +102,6 @@ class PageReplacementAlgorithms:
         hits = 0
         frames_over_time = []
 
-        n = len(pages)
         for i, page in enumerate(pages):
             if page in memory:
                 hits += 1
@@ -97,11 +110,12 @@ class PageReplacementAlgorithms:
                 if len(memory) < capacity:
                     memory.append(page)
                 else:
+                    # Look ahead to find the page used farthest in the future
                     farthest = -1
                     victim_idx = 0
                     for idx, mem_page in enumerate(memory):
                         try:
-                            next_use = pages[i+1:].index(mem_page)
+                            next_use = pages[i + 1:].index(mem_page)
                         except ValueError:
                             next_use = float('inf')
                         if next_use > farthest:
@@ -112,49 +126,56 @@ class PageReplacementAlgorithms:
 
         return page_faults, hits, frames_over_time
 
-# -------------------------
-# Main GUI
-# -------------------------
+
+# ==========================================
+# MAIN GUI APPLICATION (THE "VIEW" & "CONTROLLER")
+# ==========================================
+
 class AdvancedPageSimulator:
     def __init__(self, root):
         self.root = root
         self.root.title("Advanced Page Replacement Simulator")
-        self.root.geometry("1200x820")
+        self.root.geometry("1200x850")
         self.root.minsize(980, 720)
 
-        # state
+        # Application State
         self.pages: List[int] = []
         self.capacity: int = 3
         self.results: Dict[str, Dict] = {}
         self.frames_history: Dict[str, List[List[Optional[int]]]] = {}
+
+        # Animation State
         self.current_step = 0
         self.max_steps = 0
         self.playing = False
         self.play_interval_ms = 700
 
-        # UI pieces
+        # Build Interface
         self._build_ui()
         self._bind_shortcuts()
+        self.log("System Ready. Load a test case or enter data manually.")
 
     def _build_ui(self):
         style = ttk.Style()
         style.theme_use('clam')
 
-        # TOP: configuration
-        conf = ttk.LabelFrame(self.root, text="Configuration", padding=(10, 8))
-        conf.pack(fill="x", padx=8, pady=8)
+        # --- 1. CONFIGURATION PANEL (Top) ---
+        conf = ttk.LabelFrame(self.root, text="Configuration & Inputs", padding=(10, 8))
+        conf.pack(fill="x", padx=10, pady=5)
 
-        ttk.Label(conf, text="Reference String (space separated):").grid(row=0, column=0, sticky="w", padx=6, pady=4)
-        self.ref_entry = ttk.Entry(conf, width=68)
+        # Input Rows
+        ttk.Label(conf, text="Reference String:").grid(row=0, column=0, sticky="w", padx=5)
+        self.ref_entry = ttk.Entry(conf, width=70)
         self.ref_entry.insert(0, "7 0 1 2 0 3 0 4 2 3 0 3 2 1 2 0 1 7 0 1")
-        self.ref_entry.grid(row=0, column=1, columnspan=4, sticky="w", padx=6)
+        self.ref_entry.grid(row=0, column=1, columnspan=4, sticky="w", padx=5)
+        ToolTip(self.ref_entry, "Enter integers separated by spaces (e.g., '1 2 3 4')")
 
-        ttk.Label(conf, text="Frames:").grid(row=1, column=0, sticky="w", padx=6, pady=6)
-        self.frames_entry = ttk.Entry(conf, width=6)
+        ttk.Label(conf, text="Frames Capacity:").grid(row=1, column=0, sticky="w", padx=5, pady=5)
+        self.frames_entry = ttk.Entry(conf, width=10)
         self.frames_entry.insert(0, "3")
-        self.frames_entry.grid(row=1, column=1, sticky="w", padx=6)
+        self.frames_entry.grid(row=1, column=1, sticky="w", padx=5)
 
-        # algorithm checkboxes
+        # Algorithm Selection
         ttk.Label(conf, text="Algorithms:").grid(row=1, column=2, sticky="e")
         self.var_fifo = tk.BooleanVar(value=True)
         self.var_lru = tk.BooleanVar(value=True)
@@ -163,86 +184,98 @@ class AdvancedPageSimulator:
         ttk.Checkbutton(conf, text="LRU", variable=self.var_lru).grid(row=1, column=4, sticky="w")
         ttk.Checkbutton(conf, text="Optimal", variable=self.var_opt).grid(row=1, column=5, sticky="w")
 
-        ToolTip(self.ref_entry, "Enter integers separated by spaces, e.g. '1 2 3 2 1'")
-
-        # buttons: run / step controls / import/export
+        # Control Buttons
         btn_frame = ttk.Frame(conf)
-        btn_frame.grid(row=2, column=0, columnspan=6, sticky="w", pady=(8, 2), padx=6)
+        btn_frame.grid(row=2, column=0, columnspan=6, sticky="w", pady=(10, 0))
 
-        ttk.Button(btn_frame, text="Run →", command=self.run_all).pack(side="left", padx=4)
-        ttk.Button(btn_frame, text="Run Step-by-Step", command=self.prepare_step_by_step).pack(side="left", padx=4)
-        ttk.Button(btn_frame, text="Load CSV Testcases", command=self.load_testcases_csv).pack(side="left", padx=4)
-        ttk.Button(btn_frame, text="Export Results (CSV)", command=self.export_results).pack(side="left", padx=4)
-        ttk.Button(btn_frame, text="Save Chart as PNG", command=self.save_chart).pack(side="left", padx=4)
+        ttk.Button(btn_frame, text="▶ Run All", command=self.run_all).pack(side="left", padx=5)
+        ttk.Button(btn_frame, text="🎬 Initialize Animation", command=self.prepare_step_by_step).pack(side="left",
+                                                                                                     padx=5)
+        ttk.Separator(btn_frame, orient="vertical").pack(side="left", fill="y", padx=10)
+        ttk.Button(btn_frame, text="📂 Load CSV", command=self.load_testcases_csv).pack(side="left", padx=5)
+        ttk.Button(btn_frame, text="💾 Export Results", command=self.export_results).pack(side="left", padx=5)
+        ttk.Button(btn_frame, text="📊 Save Chart", command=self.save_chart).pack(side="left", padx=5)
 
-        # speed slider
-        ttk.Label(btn_frame, text="Playback speed:").pack(side="left", padx=(20, 4))
+        # Animation Speed Slider
+        ttk.Label(btn_frame, text="Speed:").pack(side="left", padx=(20, 5))
         self.speed_scale = ttk.Scale(btn_frame, from_=100, to=2000, value=700, command=self._speed_changed)
-        self.speed_scale.pack(side="left", padx=4, ipadx=30)
-        ToolTip(self.speed_scale, "Lower = faster playback (ms between steps)")
+        self.speed_scale.pack(side="left", padx=5, ipadx=20)
+        ToolTip(self.speed_scale, "Left = Fast, Right = Slow")
 
-        # middle: left = log & stats, right = timeline + frames
+        # --- 2. MAIN CONTENT AREA (Middle) ---
         mid = ttk.Frame(self.root)
-        mid.pack(fill="both", expand=True, padx=8, pady=6)
+        mid.pack(fill="both", expand=True, padx=10, pady=5)
 
-        # Left: logs + metrics + chart
+        # LEFT COLUMN (Logs, Metrics, Chart)
         left = ttk.Frame(mid)
-        left.pack(side="left", fill="both", expand=True)
+        left.pack(side="left", fill="both", expand=True, padx=(0, 5))
 
-        # Logs
-        log_card = ttk.LabelFrame(left, text="Console / Log", padding=(6, 6))
-        log_card.pack(fill="x", padx=6, pady=(0, 6))
-        self.log_area = tk.Text(log_card, height=10, state='disabled', bg="#f7f7f7")
+        # Console Log
+        log_card = ttk.LabelFrame(left, text="System Console", padding=(5, 5))
+        log_card.pack(fill="x", pady=(0, 5))
+        self.log_area = tk.Text(log_card, height=8, state='disabled', bg="#f0f0f0", font=("Consolas", 9))
         self.log_area.pack(fill="x")
-        ToolTip(self.log_area, "Shows run-time messages and results")
 
-        # Stats cards
-        stats_card = ttk.LabelFrame(left, text="Summary Metrics", padding=(6, 6))
-        stats_card.pack(fill="x", padx=6, pady=(0, 6))
-        self.total_label = ttk.Label(stats_card, text="Total runs: 0")
-        self.total_label.grid(row=0, column=0, sticky="w", padx=6)
-        self.best_label = ttk.Label(stats_card, text="Best algorithm: N/A")
-        self.best_label.grid(row=0, column=1, sticky="w", padx=6)
-        self.avg_label = ttk.Label(stats_card, text="Avg Efficiency: N/A")
-        self.avg_label.grid(row=0, column=2, sticky="w", padx=6)
+        # Summary Metrics
+        stats_card = ttk.LabelFrame(left, text="Performance Summary", padding=(5, 5))
+        stats_card.pack(fill="x", pady=(0, 5))
+        self.total_label = ttk.Label(stats_card, text="Total Runs: 0", font=("Segoe UI", 9, "bold"))
+        self.total_label.pack(side="left", padx=10)
+        self.best_label = ttk.Label(stats_card, text="Best Algo: N/A", font=("Segoe UI", 9, "bold"), foreground="green")
+        self.best_label.pack(side="left", padx=10)
+        self.avg_label = ttk.Label(stats_card, text="Avg Efficiency: N/A", font=("Segoe UI", 9, "bold"))
+        self.avg_label.pack(side="left", padx=10)
 
-        # Matplotlib chart
-        chart_card = ttk.LabelFrame(left, text="Chart", padding=(6,6))
-        chart_card.pack(fill="both", expand=True, padx=6, pady=(0,6))
-        self.fig, self.ax = plt.subplots(figsize=(6,3))
+        # Chart Area
+        chart_card = ttk.LabelFrame(left, text="Analytics Visualization", padding=(5, 5))
+        chart_card.pack(fill="both", expand=True)
+        self.fig, self.ax = plt.subplots(figsize=(5, 4))
         self.canvas = FigureCanvasTkAgg(self.fig, master=chart_card)
         self.canvas.get_tk_widget().pack(fill="both", expand=True)
 
-        # Right: timeline table + frame visual + step controls
-        right = ttk.Frame(mid, width=420)
-        right.pack(side="right", fill="y", expand=False)
+        # RIGHT COLUMN (Animation & Timeline)
+        right = ttk.Frame(mid, width=450)
+        right.pack(side="right", fill="y", expand=False, padx=(5, 0))
 
-        # Timeline (Treeview)
-        tv_card = ttk.LabelFrame(right, text="Timeline / Steps", padding=(6,6))
-        tv_card.pack(fill="both", expand=True, padx=6, pady=(0,6))
+        # Timeline Table
+        tv_card = ttk.LabelFrame(right, text="Execution Trace / Timeline", padding=(5, 5))
+        tv_card.pack(fill="both", expand=True, pady=(0, 5))
         columns = ("step", "page", "fifo", "lru", "opt")
-        self.timeline = ttk.Treeview(tv_card, columns=columns, show="headings", height=10)
-        for c in columns:
-            self.timeline.heading(c, text=c.capitalize())
-            self.timeline.column(c, width=80, anchor="center")
+        self.timeline = ttk.Treeview(tv_card, columns=columns, show="headings", height=15)
+
+        self.timeline.heading("step", text="#")
+        self.timeline.column("step", width=40, anchor="center")
+        self.timeline.heading("page", text="Page")
+        self.timeline.column("page", width=50, anchor="center")
+        for col in ["fifo", "lru", "opt"]:
+            self.timeline.heading(col, text=col.upper())
+            self.timeline.column(col, width=80, anchor="center")
+
+        scrollbar = ttk.Scrollbar(tv_card, orient="vertical", command=self.timeline.yview)
+        self.timeline.configure(yscroll=scrollbar.set)
+        scrollbar.pack(side="right", fill="y")
         self.timeline.pack(fill="both", expand=True)
 
-        # Frames visual (grid)
-        frames_card = ttk.LabelFrame(right, text="Frames Visual (current step)", padding=(6,6))
-        frames_card.pack(fill="x", padx=6, pady=(0,6))
-        self.frame_canvas = tk.Canvas(frames_card, height=160)
+        # Memory Visualizer
+        frames_card = ttk.LabelFrame(right, text="Memory Frames Visualizer", padding=(5, 5))
+        frames_card.pack(fill="x", pady=(0, 5))
+        self.frame_canvas = tk.Canvas(frames_card, height=180, bg="#ffffff")
         self.frame_canvas.pack(fill="x")
 
-        # Step controls
-        controls = ttk.Frame(right)
-        controls.pack(fill="x", padx=6, pady=(6,6))
-        ttk.Button(controls, text="⏮ Prev", command=self.step_prev).pack(side="left", padx=4)
-        ttk.Button(controls, text="⏯ Play/Pause", command=self.toggle_play).pack(side="left", padx=4)
-        ttk.Button(controls, text="⏭ Next", command=self.step_next).pack(side="left", padx=4)
-        ttk.Button(controls, text="⏹ Stop", command=self.stop_playback).pack(side="left", padx=4)
-        ttk.Button(controls, text="Reset", command=self.reset_simulation).pack(side="right", padx=4)
+        # Playback Controls
+        controls = ttk.LabelFrame(right, text="Playback Controls", padding=(5, 5))
+        controls.pack(fill="x")
 
-        self.status_bar = ttk.Label(self.root, text=f"Ready — {datetime.now().strftime('%H:%M:%S')}", anchor="w")
+        c_inner = ttk.Frame(controls)
+        c_inner.pack(anchor="center")
+        ttk.Button(c_inner, text="⏮ Prev", command=self.step_prev).pack(side="left", padx=2)
+        ttk.Button(c_inner, text="⏯ Play/Pause", command=self.toggle_play).pack(side="left", padx=2)
+        ttk.Button(c_inner, text="⏭ Next", command=self.step_next).pack(side="left", padx=2)
+        ttk.Button(c_inner, text="⏹ Stop", command=self.stop_playback).pack(side="left", padx=2)
+        ttk.Button(c_inner, text="Reset System", command=self.reset_simulation).pack(side="left", padx=10)
+
+        # Status Bar
+        self.status_bar = ttk.Label(self.root, text=f"Ready", anchor="w", relief="sunken")
         self.status_bar.pack(side="bottom", fill="x")
 
     def _bind_shortcuts(self):
@@ -253,329 +286,307 @@ class AdvancedPageSimulator:
     def _speed_changed(self, val):
         try:
             self.play_interval_ms = int(float(val))
-        except Exception:
+        except:
             pass
 
-    # ---------------------------
-    # Logging helpers
-    # ---------------------------
+    # --- LOGGING & INPUTS ---
     def log(self, message: str):
         self.log_area.config(state='normal')
         ts = datetime.now().strftime("%H:%M:%S")
         self.log_area.insert(tk.END, f"[{ts}] {message}\n")
         self.log_area.see(tk.END)
         self.log_area.config(state='disabled')
-        self.status_bar.config(text=message)
+        self.status_bar.config(text=f"Status: {message}")
 
-    # ---------------------------
-    # Input parsing & validation
-    # ---------------------------
     def _parse_inputs(self) -> bool:
         ref = self.ref_entry.get().strip()
         if not ref:
-            messagebox.showerror("Input Error", "Reference string cannot be empty.")
+            messagebox.showerror("Error", "Reference string empty.")
             return False
         try:
-            pages = list(map(int, ref.split()))
+            self.pages = list(map(int, ref.split()))
+            self.capacity = int(self.frames_entry.get())
+            if self.capacity <= 0: raise ValueError
         except ValueError:
-            messagebox.showerror("Input Error", "Reference string must contain integers separated by spaces.")
+            messagebox.showerror("Error", "Invalid inputs. Use integers.")
             return False
-
-        try:
-            cap = int(self.frames_entry.get())
-            if cap <= 0:
-                raise ValueError
-        except Exception:
-            messagebox.showerror("Input Error", "Frames must be a positive integer.")
-            return False
-
-        self.pages = pages
-        self.capacity = cap
         return True
 
-    # ---------------------------
-    # Run & compute results
-    # ---------------------------
+    # --- CORE LOGIC ---
     def run_all(self):
-        if not self._parse_inputs():
-            return
+        if not self._parse_inputs(): return
+
+        # Determine which algorithms to run
         selected = []
         if self.var_fifo.get(): selected.append(("FIFO", PageReplacementAlgorithms.fifo))
         if self.var_lru.get(): selected.append(("LRU", PageReplacementAlgorithms.lru))
         if self.var_opt.get(): selected.append(("Optimal", PageReplacementAlgorithms.optimal))
+
         if not selected:
-            messagebox.showwarning("No Algorithm", "Select at least one algorithm to run.")
+            messagebox.showwarning("Warning", "No algorithm selected.")
             return
 
         self.results.clear()
         self.frames_history.clear()
-        start = time.time()
+
+        start_time = time.time()
+
         for name, func in selected:
             t0 = time.time()
             faults, hits, frames = func(self.pages, self.capacity)
             t_exec = (time.time() - t0) * 1000.0
             eff = (hits / max(1, len(self.pages))) * 100.0
-            self.results[name] = {"faults": faults, "hits": hits, "eff": eff, "time_ms": t_exec}
-            self.frames_history[name] = frames
-            self.log(f"{name}: Faults={faults} Hits={hits} Eff={eff:.2f}% (exec {t_exec:.2f} ms)")
 
-        total_time = (time.time() - start) * 1000.0
-        self.log(f"Run completed in {total_time:.2f} ms")
+            self.results[name] = {"faults": faults, "hits": hits, "eff": eff, "time": t_exec}
+            self.frames_history[name] = frames
+
+            self.log(f"{name} Result: {faults} Faults | {hits} Hits | {eff:.1f}% Efficiency")
+
+        self.log(f"All simulations completed in {(time.time() - start_time) * 1000:.2f} ms")
+
         self._update_summary()
         self._plot_chart()
-        # build timeline table (merged)
         self._populate_timeline_table()
-        # set step bounds
+
+        # Prepare for animation but don't start yet
         self.max_steps = len(self.pages)
-        self.current_step = 0
-        self._draw_frames(step=0)
+        self.current_step = self.max_steps  # Jump to end for static view
+        self._draw_frames(self.max_steps - 1)
 
     def _update_summary(self):
         total = len(self.results)
-        self.total_label.config(text=f"Total runs: {total}")
+        self.total_label.config(text=f"Total Runs: {total}")
         if self.results:
             best = min(self.results.items(), key=lambda x: x[1]['faults'])[0]
-            avg_eff = sum(r['eff'] for r in self.results.values()) / len(self.results)
-            self.best_label.config(text=f"Best algorithm: {best}")
-            self.avg_label.config(text=f"Avg Efficiency: {avg_eff:.2f}%")
-        else:
-            self.best_label.config(text="Best algorithm: N/A")
-            self.avg_label.config(text="Avg Efficiency: N/A")
+            avg = sum(r['eff'] for r in self.results.values()) / total
+            self.best_label.config(text=f"Best Algo: {best}")
+            self.avg_label.config(text=f"Avg Efficiency: {avg:.1f}%")
 
-    def _plot_chart(self, per_step: Optional[int] = None):
-        # if per_step provided, compute faults/hits up to that step
-        algos = list(self.results.keys())
-        if not algos:
-            self.ax.clear()
-            self.ax.text(0.5, 0.5, "No data", ha='center', va='center')
+    def _plot_chart(self, per_step=None):
+        self.ax.clear()
+        if not self.results:
             self.canvas.draw()
             return
 
-        if per_step is None:
+        algos = list(self.results.keys())
+
+        # If showing animation step, calculate transient results
+        if per_step is not None:
+            curr_faults, curr_hits = [], []
+            limit = min(per_step + 1, len(self.pages))
+            temp_pages = self.pages[:limit]
+
+            for a in algos:
+                func = {"FIFO": PageReplacementAlgorithms.fifo, "LRU": PageReplacementAlgorithms.lru,
+                        "Optimal": PageReplacementAlgorithms.optimal}[a]
+                f, h, _ = func(temp_pages, self.capacity)
+                curr_faults.append(f)
+                curr_hits.append(h)
+            faults, hits = curr_faults, curr_hits
+        else:
             faults = [self.results[a]['faults'] for a in algos]
             hits = [self.results[a]['hits'] for a in algos]
-        else:
-            # compute for step
-            faults, hits = [], []
-            max_s = min(per_step + 1, len(self.pages))
-            for a in algos:
-                # count faults within frames_history by comparing snapshots: simpler approach:
-                frames = self.frames_history[a][:max_s]
-                # faults are number of changes in memory count where new page introduced: rough compute:
-                # We'll compute hits as sum of pages that were present in previous snapshot
-                # (approximation for per-step). For compactness use hits = total occurrences where page in snapshot earlier.
-                # But to keep it consistent, compute hits by simulating early again:
-                func = {"FIFO": PageReplacementAlgorithms.fifo,
-                        "LRU": PageReplacementAlgorithms.lru,
-                        "Optimal": PageReplacementAlgorithms.optimal}[a]
-                f_up, h_up, _ = func(self.pages[:max_s], self.capacity)
-                faults.append(f_up)
-                hits.append(h_up)
 
-        self.ax.clear()
+        # Draw Bar Chart
         x = range(len(algos))
         width = 0.35
-        self.ax.bar([i - width/2 for i in x], faults, width, label='Faults')
-        self.ax.bar([i + width/2 for i in x], hits, width, label='Hits')
+        self.ax.bar([i - width / 2 for i in x], faults, width, label='Faults', color='#ff6b6b')
+        self.ax.bar([i + width / 2 for i in x], hits, width, label='Hits', color='#4ecdc4')
+
         self.ax.set_xticks(x)
         self.ax.set_xticklabels(algos)
-        self.ax.set_ylabel("Count")
-        self.ax.set_title("Hits vs Faults")
+        self.ax.set_title("Hits vs Faults Comparison")
         self.ax.legend()
+        self.ax.grid(True, axis='y', alpha=0.3)
 
-        # secondary axis: efficiency
-        ratios = []
-        for h, f in zip(hits, faults):
-            denom = h + f
-            ratios.append((h / denom) * 100 if denom > 0 else 0.0)
+        # Efficiency Line
         ax2 = self.ax.twinx()
-        ax2.plot(list(range(len(algos))), ratios, marker='o', linestyle='--')
-        ax2.set_ylabel("Hit Ratio (%)")
-        ax2.set_ylim(0, 100)
-
-        # annotate ratios
-        for i, v in enumerate(ratios):
-            self.ax.text(i, max(faults[i], hits[i]) + 0.5, f"{v:.1f}%", ha='center')
+        ratios = [(h / (h + f) * 100) if (h + f) > 0 else 0 for h, f in zip(hits, faults)]
+        ax2.plot(x, ratios, marker='o', color='#2d3436', linestyle='--', linewidth=1)
+        ax2.set_ylabel("Efficiency %")
+        ax2.set_ylim(0, 110)
 
         self.canvas.draw()
 
     def _populate_timeline_table(self):
-        # clear
-        for r in self.timeline.get_children():
-            self.timeline.delete(r)
-        # Populate up to the length of pages
-        n = len(self.pages)
-        for i in range(n):
-            page = self.pages[i]
-            row = [i+1, page]
-            for algo in ("FIFO", "LRU", "Optimal"):
+        for item in self.timeline.get_children():
+            self.timeline.delete(item)
+
+        for i, page in enumerate(self.pages):
+            row = [i + 1, page]
+            for algo in ["FIFO", "LRU", "Optimal"]:
                 if algo in self.frames_history:
+                    # Format snapshot as "[1, 2, 3]"
                     frames = self.frames_history[algo]
-                    if i < len(frames):
-                        # show snapshot as comma-separated
-                        snapshot = frames[i]
-                        row.append(",".join(str(x) for x in snapshot if x is not None) or "-")
-                    else:
-                        row.append("-")
+                    snap = frames[i] if i < len(frames) else []
+                    snap_str = str([x for x in snap if x is not None])
+                    row.append(snap_str)
                 else:
                     row.append("-")
             self.timeline.insert("", "end", values=row)
 
-    # ---------------------------
-    # Step-by-step / Animation
-    # ---------------------------
+    # --- ANIMATION ENGINE ---
     def prepare_step_by_step(self):
-        if not self._parse_inputs():
-            return
-        # run algorithms but keep their frames_history
-        self.var_fifo.set(True); self.var_lru.set(True); self.var_opt.set(True)
+        if not self._parse_inputs(): return
+        # Ensure we have data
+        self.var_fifo.set(True);
+        self.var_lru.set(True);
+        self.var_opt.set(True)
         self.run_all()
-        if self.max_steps == 0:
-            messagebox.showinfo("Nothing to animate", "Reference string is empty.")
-            return
+
+        if self.max_steps == 0: return
         self.current_step = 0
         self._draw_frames(0)
-        self.log("Prepared step-by-step execution. Use Next/Prev/Play to animate.")
+        self.log("Animation Initialized. Press Play or use Step buttons.")
 
-    def _draw_frames(self, step: int):
+    def _draw_frames(self, step):
         self.frame_canvas.delete("all")
-        # draw each algo as separate rows
-        algos = [a for a in ("FIFO", "LRU", "Optimal") if a in self.frames_history]
-        rows = len(algos)
-        height = 120
-        width = max(300, self.frame_canvas.winfo_width() - 10)
-        self.frame_canvas.config(height=rows * 48 + 20)
-        cell_w = max(60, (width - 20) // max(1, self.capacity))
-        y = 10
-        for r_idx, algo in enumerate(algos):
+
+        algos = [a for a in ["FIFO", "LRU", "Optimal"] if a in self.frames_history]
+        if not algos: return
+
+        # Dimensions
+        c_width = self.frame_canvas.winfo_width()
+        box_size = 40
+        spacing = 10
+        start_y = 20
+
+        # For each algorithm
+        for i, algo in enumerate(algos):
             frames = self.frames_history[algo]
-            snapshot = frames[step] if step < len(frames) else [None]*self.capacity
-            # label
-            self.frame_canvas.create_text(10, y + 12, anchor="w", text=algo, font=("Segoe UI", 10, "bold"))
-            # boxes
-            x = 80
-            for f_idx in range(self.capacity):
-                val = snapshot[f_idx] if f_idx < len(snapshot) else None
-                rect = self.frame_canvas.create_rectangle(x, y, x + cell_w - 6, y + 30, fill="#ffffff", outline="#000000")
-                text = str(val) if val is not None else ""
-                self.frame_canvas.create_text(x + (cell_w - 6)/2, y + 15, text=text)
-                x += cell_w
-            # highlight requested page for this step
-            requested = self.pages[step] if step < len(self.pages) else None
-            self.frame_canvas.create_text(width - 50, y + 12, anchor="w", text=f"Req: {requested}")
-            y += 48
-        # update chart to show aggregated results up to this step
+            if step < len(frames):
+                snapshot = frames[step]
+
+                # Draw Algo Name
+                y = start_y + (i * 60)
+                self.frame_canvas.create_text(10, y + 20, text=algo, anchor="w", font=("Segoe UI", 10, "bold"))
+
+                # Draw Frame Boxes
+                start_x = 80
+                for f_idx, val in enumerate(snapshot):
+                    x = start_x + (f_idx * (box_size + spacing))
+                    # Check if this specific box holds the newly arrived page
+                    is_new = (val == self.pages[step]) if step < len(self.pages) else False
+                    color = "#dafce0" if is_new and val is not None else "white"
+
+                    self.frame_canvas.create_rectangle(x, y, x + box_size, y + box_size, fill=color, outline="black")
+                    if val is not None:
+                        self.frame_canvas.create_text(x + box_size / 2, y + box_size / 2, text=str(val),
+                                                      font=("Consolas", 10, "bold"))
+
+        # Highlight Timeline Row
+        children = self.timeline.get_children()
+        if children and step < len(children):
+            self.timeline.selection_set(children[step])
+            self.timeline.see(children[step])
+
+        # Update Chart dynamically
         self._plot_chart(per_step=step)
-        # update timeline selection
-        items = self.timeline.get_children()
-        if items:
-            idx = min(step, len(items)-1)
-            self.timeline.selection_set(items[idx])
-            self.timeline.see(items[idx])
 
     def step_next(self):
-        if self.max_steps == 0:
-            return
-        self.current_step = min(self.max_steps - 1, self.current_step + 1)
-        self._draw_frames(self.current_step)
+        if self.current_step < self.max_steps - 1:
+            self.current_step += 1
+            self._draw_frames(self.current_step)
 
     def step_prev(self):
-        if self.max_steps == 0:
-            return
-        self.current_step = max(0, self.current_step - 1)
-        self._draw_frames(self.current_step)
+        if self.current_step > 0:
+            self.current_step -= 1
+            self._draw_frames(self.current_step)
 
     def toggle_play(self):
-        if not self.frames_history:
-            messagebox.showinfo("Nothing to play", "Run a simulation first (or prepare step-by-step).")
-            return
         self.playing = not self.playing
         if self.playing:
+            self.log("Playback Started")
             self._play_loop()
-            self.log("Play started")
         else:
-            self.log("Play paused")
+            self.log("Playback Paused")
 
     def _play_loop(self):
-        if not self.playing:
-            return
-        self.step_next()
-        if self.current_step >= self.max_steps - 1:
+        if not self.playing: return
+        if self.current_step < self.max_steps - 1:
+            self.step_next()
+            self.root.after(self.play_interval_ms, self._play_loop)
+        else:
             self.playing = False
-            self.log("Playback finished")
-            return
-        self.root.after(self.play_interval_ms, self._play_loop)
+            self.log("Playback Finished")
 
     def stop_playback(self):
         self.playing = False
-        self.log("Playback stopped")
+        self.current_step = 0
+        self._draw_frames(0)
+        self.log("Playback Stopped")
 
     def reset_simulation(self):
-        self.pages = []
-        self.frames_history.clear()
+        self.playing = False
         self.results.clear()
-        self.current_step = 0
-        self.max_steps = 0
-        for r in self.timeline.get_children():
-            self.timeline.delete(r)
-        self.frame_canvas.delete("all")
+        self.frames_history.clear()
         self.ax.clear()
         self.canvas.draw()
-        self.log("Simulation reset")
+        self.frame_canvas.delete("all")
+        for item in self.timeline.get_children():
+            self.timeline.delete(item)
+        self.log("System Reset")
 
-    # ---------------------------
-    # Import / Export helpers
-    # ---------------------------
+    # --- IO HELPERS ---
     def load_testcases_csv(self):
-        path = filedialog.askopenfilename(filetypes=[("CSV files","*.csv"), ("All files","*.*")])
-        if not path:
-            return
+        path = filedialog.askopenfilename(filetypes=[("CSV Files", "*.csv")])
+        if not path: return
         try:
             with open(path, newline='') as f:
-                reader = csv.DictReader(f)
+                reader = csv.reader(f)
+                # Skip header if it exists, roughly checking first char
                 rows = list(reader)
-            if not rows:
-                messagebox.showinfo("No rows", "CSV contained no rows.")
-                return
-            # present first row but allow user to pick which row
-            # For simplicity load first row
-            r = rows[0]
-            ref = r.get("reference_string") or r.get("reference") or r.get("ref") or ""
-            cap = r.get("capacity") or r.get("frames") or r.get("cap") or "3"
-            self.ref_entry.delete(0, tk.END); self.ref_entry.insert(0, ref)
-            self.frames_entry.delete(0, tk.END); self.frames_entry.insert(0, cap)
-            self.log(f"Loaded testcase from {path} (first row).")
+                if not rows: return
+
+                # Heuristic: Try to find a row that looks like data
+                # Assuming CSV format: ID, Description, Frames, RefString
+                # We'll pick the last row usually or the first valid one
+                data_row = rows[-1]  # Load the last entry
+
+                # Attempt to parse frames and ref string from columns
+                # We look for a long string (ref) and a short number (frames)
+                frames_val = "3"
+                ref_val = ""
+
+                for col in data_row:
+                    if len(col) < 5 and col.isdigit():
+                        frames_val = col
+                    if " " in col and len(col) > 5:
+                        ref_val = col
+
+                if ref_val:
+                    self.ref_entry.delete(0, tk.END);
+                    self.ref_entry.insert(0, ref_val)
+                    self.frames_entry.delete(0, tk.END);
+                    self.frames_entry.insert(0, frames_val)
+                    self.log(f"Loaded test case from {path}")
+                else:
+                    messagebox.showerror("Error", "Could not identify reference string in CSV")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load CSV: {e}")
 
     def export_results(self):
-        if not self.results:
-            messagebox.showinfo("No results", "Run a simulation before exporting.")
-            return
-        path = filedialog.asksaveasfilename(defaultextension=".csv", filetypes=[("CSV files","*.csv")])
-        if not path:
-            return
-        try:
-            with open(path, "w", newline='') as f:
-                writer = csv.writer(f)
-                writer.writerow(["Algorithm","Faults","Hits","Efficiency (%)","Exec Time (ms)"])
-                for algo, data in self.results.items():
-                    writer.writerow([algo, data['faults'], data['hits'], f"{data['eff']:.2f}", f"{data['time_ms']:.3f}"])
-            self.log(f"Exported results to {path}")
-            messagebox.showinfo("Exported", "Results exported successfully.")
-        except Exception as e:
-            messagebox.showerror("Export failed", str(e))
+        if not self.results: return
+        path = filedialog.asksaveasfilename(defaultextension=".csv", filetypes=[("CSV Files", "*.csv")])
+        if path:
+            try:
+                with open(path, 'w', newline='') as f:
+                    writer = csv.writer(f)
+                    writer.writerow(["Algorithm", "Faults", "Hits", "Efficiency", "Time(ms)"])
+                    for algo, data in self.results.items():
+                        writer.writerow(
+                            [algo, data['faults'], data['hits'], f"{data['eff']:.2f}%", f"{data['time']:.2f}"])
+                self.log(f"Exported to {path}")
+                messagebox.showinfo("Success", "Data exported successfully.")
+            except Exception as e:
+                messagebox.showerror("Error", str(e))
 
     def save_chart(self):
-        path = filedialog.asksaveasfilename(defaultextension=".png", filetypes=[("PNG image","*.png")])
-        if not path:
-            return
-        try:
-            self.fig.savefig(path, bbox_inches='tight', dpi=200)
-            self.log(f"Saved chart to {path}")
-            messagebox.showinfo("Saved", "Chart saved as PNG.")
-        except Exception as e:
-            messagebox.showerror("Save failed", str(e))
+        path = filedialog.asksaveasfilename(defaultextension=".png", filetypes=[("PNG Image", "*.png")])
+        if path:
+            self.fig.savefig(path, dpi=300, bbox_inches='tight')
+            self.log(f"Chart saved to {path}")
+            messagebox.showinfo("Success", "Chart saved successfully.")
 
 
 if __name__ == "__main__":
