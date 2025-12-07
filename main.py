@@ -8,18 +8,19 @@ import time
 from typing import List, Tuple, Dict, Optional
 
 THEME = {
-    "bg_main": "#0d1117",
-    "bg_panel": "#161b22",
-    "fg_text": "#c9d1d9",
-    "accent": "#58a6ff",
-    "accent_hover": "#1f6feb",
-    "success": "#238636",
-    "warning": "#d29922",
-    "chart_grid": "#30363d",
-    "input_bg": "#0d1117",
-    "box_new": "#58a6ff",
-    "box_old": "#161b22",
-    "border": "#30363d"
+    "bg_main": "#050a14",
+    "bg_panel": "#0f172a",
+    "fg_text": "#00f3ff",
+    "fg_sub": "#cbd5e1",
+    "accent": "#d946ef",
+    "accent_hover": "#e879f9",
+    "success": "#00ff9d",
+    "warning": "#ff003c",
+    "chart_grid": "#1e293b",
+    "input_bg": "#1e293b",
+    "box_new": "#d946ef",
+    "box_old": "#0f172a",
+    "border": "#00f3ff"
 }
 
 
@@ -38,8 +39,8 @@ class ToolTip:
         self.tip = tk.Toplevel(self.widget)
         self.tip.wm_overrideredirect(True)
         label = tk.Label(self.tip, text=self.text, justify='left',
-                         background="#1f6feb", foreground="#ffffff", borderwidth=1, relief="solid",
-                         font=("Segoe UI", 8))
+                         background="#000000", foreground="#00f3ff", borderwidth=1, relief="solid",
+                         font=("Consolas", 8))
         label.pack(ipadx=4, ipady=2)
         self.tip.geometry(f"+{x}+{y}")
 
@@ -121,7 +122,7 @@ class PageReplacementAlgorithms:
 class AdvancedPageSimulator:
     def __init__(self, root):
         self.root = root
-        self.root.title("Page Replacement Simulator - GitHub Dark")
+        self.root.title("CYBERPUNK PAGE REPLACEMENT v2.0")
         self.root.geometry("1250x850")
         self.root.minsize(1000, 720)
         self.root.configure(bg=THEME["bg_main"])
@@ -138,56 +139,55 @@ class AdvancedPageSimulator:
         self._apply_styles()
         self._build_ui()
         self._bind_shortcuts()
-        self.log("Ready for execution.")
+        self.log("SYSTEM ONLINE.")
 
     def _apply_styles(self):
         style = ttk.Style()
         style.theme_use('clam')
 
-        style.configure(".", background=THEME["bg_main"], foreground=THEME["fg_text"], font=("Segoe UI", 10))
+        style.configure(".", background=THEME["bg_main"], foreground=THEME["fg_text"], font=("Consolas", 10))
         style.configure("TLabel", background=THEME["bg_main"], foreground=THEME["fg_text"])
-        style.configure("TLabelframe", background=THEME["bg_panel"], bordercolor=THEME["border"])
-        style.configure("TLabelframe.Label", background=THEME["bg_panel"], foreground=THEME["fg_text"],
-                        font=("Segoe UI", 11, "bold"))
+        style.configure("TLabelframe", background=THEME["bg_panel"], bordercolor=THEME["chart_grid"])
+        style.configure("TLabelframe.Label", background=THEME["bg_panel"], foreground=THEME["accent"],
+                        font=("Consolas", 11, "bold"))
         style.configure("Card.TFrame", background=THEME["bg_panel"])
-        style.configure("TEntry", fieldbackground=THEME["input_bg"], foreground=THEME["fg_text"],
-                        bordercolor=THEME["border"])
-
-        style.configure("TButton", background=THEME["success"], foreground="white", borderwidth=0,
-                        font=("Segoe UI", 10, "bold"))
-        style.map("TButton", background=[('active', '#2ea043'), ('pressed', '#1f6feb')])
+        style.configure("TEntry", fieldbackground=THEME["input_bg"], foreground="#ffffff", bordercolor=THEME["accent"])
+        style.configure("TButton", background=THEME["accent"], foreground="white", borderwidth=1,
+                        font=("Consolas", 10, "bold"))
+        style.map("TButton", background=[('active', THEME["accent_hover"]), ('pressed', '#be185d')])
 
         style.configure("Treeview",
-                        background=THEME["bg_main"],
+                        background=THEME["bg_panel"],
                         foreground=THEME["fg_text"],
-                        fieldbackground=THEME["bg_main"],
-                        font=("Segoe UI", 9),
+                        fieldbackground=THEME["bg_panel"],
+                        font=("Consolas", 9),
                         rowheight=25)
-        style.configure("Treeview.Heading", background=THEME["bg_panel"], foreground=THEME["fg_text"],
-                        font=("Segoe UI", 9, "bold"))
+        style.configure("Treeview.Heading", background=THEME["input_bg"], foreground=THEME["accent"],
+                        font=("Consolas", 9, "bold"))
         style.map("Treeview", background=[('selected', THEME["accent"])], foreground=[('selected', 'white')])
 
-        style.configure("Horizontal.TScale", background=THEME["bg_panel"], troughcolor=THEME["border"])
+        style.configure("Horizontal.TScale", background=THEME["bg_panel"], troughcolor=THEME["input_bg"],
+                        sliderthickness=15)
         style.configure("TCheckbutton", background=THEME["bg_panel"], foreground=THEME["fg_text"])
 
     def _build_ui(self):
         conf_container = ttk.Frame(self.root, style="Card.TFrame", padding=15)
         conf_container.pack(fill="x", padx=15, pady=15)
 
-        ttk.Label(conf_container, text="Configuration", font=("Segoe UI", 14, "bold"),
-                  background=THEME["bg_panel"]).pack(anchor="w", pady=(0, 10))
+        ttk.Label(conf_container, text=">> CONFIGURATION PROTOCOL", font=("Consolas", 14, "bold"),
+                  foreground=THEME["accent"], background=THEME["bg_panel"]).pack(anchor="w", pady=(0, 10))
 
         grid_frame = ttk.Frame(conf_container, style="Card.TFrame")
         grid_frame.pack(fill="x")
 
-        ttk.Label(grid_frame, text="Reference String:", background=THEME["bg_panel"]).grid(row=0, column=0, sticky="w",
-                                                                                           padx=(0, 10))
+        ttk.Label(grid_frame, text="REF_STRING:", background=THEME["bg_panel"]).grid(row=0, column=0, sticky="w",
+                                                                                     padx=(0, 10))
         self.ref_entry = ttk.Entry(grid_frame, width=80)
         self.ref_entry.insert(0, "7 0 1 2 0 3 0 4 2 3 0 3 2 1 2 0 1 7 0 1")
         self.ref_entry.grid(row=0, column=1, sticky="w")
 
-        ttk.Label(grid_frame, text="Frames Capacity:", background=THEME["bg_panel"]).grid(row=0, column=2, sticky="w",
-                                                                                          padx=(20, 10))
+        ttk.Label(grid_frame, text="CAPACITY:", background=THEME["bg_panel"]).grid(row=0, column=2, sticky="w",
+                                                                                   padx=(20, 10))
         self.frames_entry = ttk.Entry(grid_frame, width=10)
         self.frames_entry.insert(0, "3")
         self.frames_entry.grid(row=0, column=3, sticky="w")
@@ -195,7 +195,7 @@ class AdvancedPageSimulator:
         algo_frame = ttk.Frame(conf_container, style="Card.TFrame")
         algo_frame.pack(fill="x", pady=(15, 0))
 
-        ttk.Label(algo_frame, text="Algorithms:", background=THEME["bg_panel"], font=("Segoe UI", 10, "bold")).pack(
+        ttk.Label(algo_frame, text="ALGORITHMS:", background=THEME["bg_panel"], font=("Consolas", 10, "bold")).pack(
             side="left", padx=(0, 10))
 
         self.var_fifo = tk.BooleanVar(value=True)
@@ -204,19 +204,19 @@ class AdvancedPageSimulator:
 
         ttk.Checkbutton(algo_frame, text="FIFO", variable=self.var_fifo).pack(side="left", padx=10)
         ttk.Checkbutton(algo_frame, text="LRU", variable=self.var_lru).pack(side="left", padx=10)
-        ttk.Checkbutton(algo_frame, text="Optimal", variable=self.var_opt).pack(side="left", padx=10)
+        ttk.Checkbutton(algo_frame, text="OPTIMAL", variable=self.var_opt).pack(side="left", padx=10)
 
         btn_frame = ttk.Frame(conf_container, style="Card.TFrame")
         btn_frame.pack(fill="x", pady=(15, 0))
 
-        ttk.Button(btn_frame, text="Run Simulation", command=self.run_all).pack(side="left", padx=(0, 5))
-        ttk.Button(btn_frame, text="Visualize", command=self.prepare_step_by_step).pack(side="left", padx=5)
+        ttk.Button(btn_frame, text="EXECUTE", command=self.run_all).pack(side="left", padx=(0, 5))
+        ttk.Button(btn_frame, text="VISUALIZE", command=self.prepare_step_by_step).pack(side="left", padx=5)
         ttk.Separator(btn_frame, orient="vertical").pack(side="left", fill="y", padx=15)
-        ttk.Button(btn_frame, text="Load CSV", command=self.load_testcases_csv).pack(side="left", padx=5)
-        ttk.Button(btn_frame, text="Export Results", command=self.export_results).pack(side="left", padx=5)
-        ttk.Button(btn_frame, text="Save Graph", command=self.save_chart).pack(side="left", padx=5)
+        ttk.Button(btn_frame, text="IMPORT.CSV", command=self.load_testcases_csv).pack(side="left", padx=5)
+        ttk.Button(btn_frame, text="EXPORT.CSV", command=self.export_results).pack(side="left", padx=5)
+        ttk.Button(btn_frame, text="SAVE.IMG", command=self.save_chart).pack(side="left", padx=5)
 
-        ttk.Label(btn_frame, text="Speed:", background=THEME["bg_panel"]).pack(side="left", padx=(30, 5))
+        ttk.Label(btn_frame, text="SPEED:", background=THEME["bg_panel"]).pack(side="left", padx=(30, 5))
         self.speed_scale = ttk.Scale(btn_frame, from_=100, to=2000, value=700, command=self._speed_changed)
         self.speed_scale.pack(side="left", ipadx=20)
 
@@ -229,23 +229,23 @@ class AdvancedPageSimulator:
         metrics_panel = ttk.Frame(left, style="Card.TFrame", padding=15)
         metrics_panel.pack(fill="x", pady=(0, 15))
 
-        self.total_label = ttk.Label(metrics_panel, text="Total Runs: 0", background=THEME["bg_panel"],
-                                     font=("Segoe UI", 12))
+        self.total_label = ttk.Label(metrics_panel, text="RUNS: 0", background=THEME["bg_panel"],
+                                     font=("Consolas", 12))
         self.total_label.pack(side="left", expand=True)
 
-        self.best_label = ttk.Label(metrics_panel, text="Best Algo: -", background=THEME["bg_panel"],
-                                    foreground=THEME["accent"], font=("Segoe UI", 12, "bold"))
+        self.best_label = ttk.Label(metrics_panel, text="BEST: -", background=THEME["bg_panel"],
+                                    foreground=THEME["success"], font=("Consolas", 12, "bold"))
         self.best_label.pack(side="left", expand=True)
 
-        self.avg_label = ttk.Label(metrics_panel, text="Avg Eff: -", background=THEME["bg_panel"],
-                                   font=("Segoe UI", 12))
+        self.avg_label = ttk.Label(metrics_panel, text="AVG_EFF: -", background=THEME["bg_panel"],
+                                   font=("Consolas", 12))
         self.avg_label.pack(side="left", expand=True)
 
         chart_panel = ttk.Frame(left, style="Card.TFrame", padding=10)
         chart_panel.pack(fill="both", expand=True)
 
-        ttk.Label(chart_panel, text="Metrics Analysis", background=THEME["bg_panel"],
-                  font=("Segoe UI", 11, "bold")).pack(anchor="w", pady=(0, 5))
+        ttk.Label(chart_panel, text=">> PERFORMANCE_MATRIX", background=THEME["bg_panel"],
+                  font=("Consolas", 11, "bold"), foreground=THEME["fg_text"]).pack(anchor="w", pady=(0, 5))
 
         plt.style.use('dark_background')
         self.fig, self.ax = plt.subplots(figsize=(5, 4))
@@ -258,33 +258,34 @@ class AdvancedPageSimulator:
 
         console_panel = ttk.Frame(right, style="Card.TFrame", padding=10)
         console_panel.pack(fill="x", pady=(0, 15))
-        ttk.Label(console_panel, text="Logs", background=THEME["bg_panel"], font=("Segoe UI", 10, "bold")).pack(
+        ttk.Label(console_panel, text=">> SYSTEM_LOG", background=THEME["bg_panel"],
+                  font=("Consolas", 10, "bold")).pack(
             anchor="w")
-        self.log_area = tk.Text(console_panel, height=5, state='disabled', bg=THEME["bg_main"], fg=THEME["fg_text"],
+        self.log_area = tk.Text(console_panel, height=5, state='disabled', bg=THEME["bg_main"], fg=THEME["success"],
                                 font=("Consolas", 9),
-                                relief="flat", highlightthickness=1, highlightbackground=THEME["border"])
+                                relief="flat", highlightthickness=1, highlightbackground=THEME["accent"])
         self.log_area.pack(fill="x", pady=(5, 0))
 
         table_panel = ttk.Frame(right, style="Card.TFrame", padding=10)
         table_panel.pack(fill="both", expand=True, pady=(0, 15))
-        ttk.Label(table_panel, text="Trace Table", background=THEME["bg_panel"],
-                  font=("Segoe UI", 10, "bold")).pack(anchor="w", pady=(0, 5))
+        ttk.Label(table_panel, text=">> EXECUTION_TRACE", background=THEME["bg_panel"],
+                  font=("Consolas", 10, "bold")).pack(anchor="w", pady=(0, 5))
 
         columns = ("step", "page", "fifo", "lru", "opt")
         self.timeline = ttk.Treeview(table_panel, columns=columns, show="headings", height=10)
         self.timeline.heading("step", text="#")
         self.timeline.column("step", width=30, anchor="center")
-        self.timeline.heading("page", text="Page")
+        self.timeline.heading("page", text="PG")
         self.timeline.column("page", width=40, anchor="center")
         for col in ["fifo", "lru", "opt"]:
-            self.timeline.heading(col, text=col)
+            self.timeline.heading(col, text=col.upper())
             self.timeline.column(col, width=80, anchor="center")
         self.timeline.pack(fill="both", expand=True)
 
         vis_panel = ttk.Frame(right, style="Card.TFrame", padding=10)
         vis_panel.pack(fill="x")
-        ttk.Label(vis_panel, text="Visualizer", background=THEME["bg_panel"],
-                  font=("Segoe UI", 10, "bold")).pack(anchor="w", pady=(0, 5))
+        ttk.Label(vis_panel, text=">> MEMORY_VISUALIZER", background=THEME["bg_panel"],
+                  font=("Consolas", 10, "bold")).pack(anchor="w", pady=(0, 5))
 
         self.frame_canvas = tk.Canvas(vis_panel, height=180, bg=THEME["bg_panel"], highlightthickness=0)
         self.frame_canvas.pack(fill="x")
@@ -294,13 +295,14 @@ class AdvancedPageSimulator:
 
         c_inner = ttk.Frame(ctrl_frame, style="Card.TFrame")
         c_inner.pack(anchor="center")
-        ttk.Button(c_inner, text="Prev", command=self.step_prev, width=5).pack(side="left", padx=2)
-        ttk.Button(c_inner, text="Play/Pause", command=self.toggle_play).pack(side="left", padx=2)
-        ttk.Button(c_inner, text="Next", command=self.step_next, width=5).pack(side="left", padx=2)
-        ttk.Button(c_inner, text="Reset", command=self.reset_simulation).pack(side="left", padx=10)
+        ttk.Button(c_inner, text="<<", command=self.step_prev, width=3).pack(side="left", padx=2)
+        ttk.Button(c_inner, text="PLAY/PAUSE", command=self.toggle_play).pack(side="left", padx=2)
+        ttk.Button(c_inner, text=">>", command=self.step_next, width=3).pack(side="left", padx=2)
+        ttk.Button(c_inner, text="RESET", command=self.reset_simulation).pack(side="left", padx=10)
 
-        self.status_bar = tk.Label(self.root, text=" Ready", bg=THEME["bg_panel"], fg=THEME["fg_text"], anchor="w",
-                                   font=("Segoe UI", 9))
+        self.status_bar = tk.Label(self.root, text=" SYSTEM READY", bg=THEME["bg_panel"], fg=THEME["fg_text"],
+                                   anchor="w",
+                                   font=("Consolas", 9))
         self.status_bar.pack(side="bottom", fill="x")
 
     def _bind_shortcuts(self):
@@ -320,19 +322,19 @@ class AdvancedPageSimulator:
         self.log_area.insert(tk.END, f"[{ts}] {message}\n")
         self.log_area.see(tk.END)
         self.log_area.config(state='disabled')
-        self.status_bar.config(text=f" Status: {message}")
+        self.status_bar.config(text=f" STATUS: {message}")
 
     def _parse_inputs(self) -> bool:
         ref = self.ref_entry.get().strip()
         if not ref:
-            messagebox.showerror("Error", "Reference string empty.")
+            messagebox.showerror("ERROR", "REFERENCE STRING EMPTY.")
             return False
         try:
             self.pages = list(map(int, ref.split()))
             self.capacity = int(self.frames_entry.get())
             if self.capacity <= 0: raise ValueError
         except ValueError:
-            messagebox.showerror("Error", "Invalid inputs.")
+            messagebox.showerror("ERROR", "INVALID INPUTS.")
             return False
         return True
 
@@ -342,10 +344,10 @@ class AdvancedPageSimulator:
         selected = []
         if self.var_fifo.get(): selected.append(("FIFO", PageReplacementAlgorithms.fifo))
         if self.var_lru.get(): selected.append(("LRU", PageReplacementAlgorithms.lru))
-        if self.var_opt.get(): selected.append(("Optimal", PageReplacementAlgorithms.optimal))
+        if self.var_opt.get(): selected.append(("OPTIMAL", PageReplacementAlgorithms.optimal))
 
         if not selected:
-            messagebox.showwarning("Warning", "Select at least one algorithm.")
+            messagebox.showwarning("WARNING", "SELECT ALGORITHM.")
             return
 
         self.results.clear()
@@ -358,7 +360,7 @@ class AdvancedPageSimulator:
             eff = (hits / max(1, len(self.pages))) * 100.0
             self.results[name] = {"faults": faults, "hits": hits, "eff": eff, "time": t_exec}
             self.frames_history[name] = frames
-            self.log(f"{name}: {faults} Faults, {hits} Hits")
+            self.log(f"{name}: {faults} F | {hits} H")
 
         self._update_summary()
         self._plot_chart()
@@ -370,12 +372,12 @@ class AdvancedPageSimulator:
 
     def _update_summary(self):
         total = len(self.results)
-        self.total_label.config(text=f"Total Runs: {total}")
+        self.total_label.config(text=f"RUNS: {total}")
         if self.results:
             best = min(self.results.items(), key=lambda x: x[1]['faults'])[0]
             avg = sum(r['eff'] for r in self.results.values()) / total
-            self.best_label.config(text=f"Best: {best}")
-            self.avg_label.config(text=f"Avg Eff: {avg:.1f}%")
+            self.best_label.config(text=f"BEST: {best}")
+            self.avg_label.config(text=f"AVG_EFF: {avg:.1f}%")
 
     def _plot_chart(self, per_step=None):
         self.ax.clear()
@@ -391,7 +393,7 @@ class AdvancedPageSimulator:
             temp_pages = self.pages[:limit]
             for a in algos:
                 func = {"FIFO": PageReplacementAlgorithms.fifo, "LRU": PageReplacementAlgorithms.lru,
-                        "Optimal": PageReplacementAlgorithms.optimal}[a]
+                        "OPTIMAL": PageReplacementAlgorithms.optimal}[a]
                 f, h, _ = func(temp_pages, self.capacity)
                 curr_faults.append(f)
                 curr_hits.append(h)
@@ -403,15 +405,17 @@ class AdvancedPageSimulator:
         x = range(len(algos))
         width = 0.35
 
-        self.ax.bar([i - width / 2 for i in x], faults, width, label='Faults', color=THEME["warning"])
-        self.ax.bar([i + width / 2 for i in x], hits, width, label='Hits', color=THEME["success"])
+        self.ax.bar([i - width / 2 for i in x], faults, width, label='FAULTS', color=THEME["warning"],
+                    edgecolor=THEME['bg_main'])
+        self.ax.bar([i + width / 2 for i in x], hits, width, label='HITS', color=THEME["success"],
+                    edgecolor=THEME['bg_main'])
 
         self.ax.set_xticks(x)
         self.ax.set_xticklabels(algos, color=THEME["fg_text"])
         self.ax.tick_params(axis='y', colors=THEME["fg_text"])
-        self.ax.set_title("Performance Metrics", fontsize=10, fontweight='bold', color=THEME['fg_text'])
-        self.ax.legend(facecolor=THEME['bg_panel'], edgecolor=THEME['border'], labelcolor=THEME["fg_text"])
-        self.ax.grid(True, axis='y', color=THEME["chart_grid"], alpha=0.5)
+        self.ax.set_title("HITS vs FAULTS", fontsize=10, fontweight='bold', color=THEME['accent'])
+        self.ax.legend(facecolor=THEME['bg_panel'], edgecolor=THEME['accent'], labelcolor=THEME["fg_text"])
+        self.ax.grid(True, axis='y', color=THEME["chart_grid"], alpha=0.5, linestyle='--')
 
         self.ax.spines['top'].set_visible(False)
         self.ax.spines['right'].set_visible(False)
@@ -420,10 +424,10 @@ class AdvancedPageSimulator:
 
         ax2 = self.ax.twinx()
         ratios = [(h / (h + f) * 100) if (h + f) > 0 else 0 for h, f in zip(hits, faults)]
-        ax2.plot(x, ratios, marker='o', color='#8b949e', linestyle='--', linewidth=1.5)
-        ax2.set_ylabel("Efficiency %", color="#8b949e")
+        ax2.plot(x, ratios, marker='s', color='#ffffff', linestyle=':', linewidth=1)
+        ax2.set_ylabel("EFFICIENCY %", color="#ffffff")
         ax2.set_ylim(0, 110)
-        ax2.tick_params(axis='y', colors="#8b949e")
+        ax2.tick_params(axis='y', colors="#ffffff")
         ax2.spines['top'].set_visible(False)
         ax2.spines['right'].set_visible(False)
 
@@ -434,7 +438,7 @@ class AdvancedPageSimulator:
             self.timeline.delete(item)
         for i, page in enumerate(self.pages):
             row = [i + 1, page]
-            for algo in ["FIFO", "LRU", "Optimal"]:
+            for algo in ["FIFO", "LRU", "OPTIMAL"]:
                 if algo in self.frames_history:
                     frames = self.frames_history[algo]
                     snap = frames[i] if i < len(frames) else []
@@ -446,18 +450,18 @@ class AdvancedPageSimulator:
 
     def prepare_step_by_step(self):
         if not self._parse_inputs(): return
-        self.var_fifo.set(True);
-        self.var_lru.set(True);
+        self.var_fifo.set(True)
+        self.var_lru.set(True)
         self.var_opt.set(True)
         self.run_all()
         if self.max_steps == 0: return
         self.current_step = 0
         self._draw_frames(0)
-        self.log("Visualization started.")
+        self.log("VISUALIZATION SEQ INITIATED.")
 
     def _draw_frames(self, step):
         self.frame_canvas.delete("all")
-        algos = [a for a in ["FIFO", "LRU", "Optimal"] if a in self.frames_history]
+        algos = [a for a in ["FIFO", "LRU", "OPTIMAL"] if a in self.frames_history]
         if not algos: return
 
         box_size = 35
@@ -471,21 +475,21 @@ class AdvancedPageSimulator:
                 y = start_y + (i * 55)
 
                 self.frame_canvas.create_text(10, y + box_size / 2, text=algo, anchor="w", fill=THEME["fg_text"],
-                                              font=("Segoe UI", 9, "bold"))
+                                              font=("Consolas", 9, "bold"))
 
                 start_x = 70
                 for f_idx, val in enumerate(snapshot):
                     x = start_x + (f_idx * (box_size + spacing))
                     is_new = (val == self.pages[step]) if step < len(self.pages) else False
 
-                    fill_col = THEME["box_new"] if is_new and val is not None else THEME["bg_main"]
-                    outline_col = THEME["accent"] if is_new else THEME["border"]
-                    text_col = "white" if is_new else THEME["fg_text"]
+                    fill_col = THEME["box_new"] if is_new and val is not None else THEME["box_old"]
+                    outline_col = THEME["accent"] if is_new else THEME["chart_grid"]
+                    txt_col = "black" if is_new else THEME["fg_text"]
 
                     self.frame_canvas.create_rectangle(x, y, x + box_size, y + box_size, fill=fill_col,
-                                                       outline=outline_col)
+                                                       outline=outline_col, width=2)
                     if val is not None:
-                        self.frame_canvas.create_text(x + box_size / 2, y + box_size / 2, text=str(val), fill=text_col,
+                        self.frame_canvas.create_text(x + box_size / 2, y + box_size / 2, text=str(val), fill=txt_col,
                                                       font=("Consolas", 10, "bold"))
 
         children = self.timeline.get_children()
@@ -525,7 +529,7 @@ class AdvancedPageSimulator:
         self.frame_canvas.delete("all")
         for item in self.timeline.get_children():
             self.timeline.delete(item)
-        self.log("Reset done.")
+        self.log("RESET.")
 
     def load_testcases_csv(self):
         path = filedialog.askopenfilename(filetypes=[("CSV Files", "*.csv")])
@@ -540,9 +544,9 @@ class AdvancedPageSimulator:
                     if ref_val:
                         self.ref_entry.delete(0, tk.END)
                         self.ref_entry.insert(0, ref_val)
-                        self.log("CSV loaded.")
+                        self.log("CSV LOADED.")
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror("ERROR", str(e))
 
     def export_results(self):
         if not self.results: return
@@ -552,7 +556,7 @@ class AdvancedPageSimulator:
                 w = csv.writer(f)
                 w.writerow(["Algo", "Faults", "Hits"])
                 for k, v in self.results.items(): w.writerow([k, v['faults'], v['hits']])
-            self.log("Export successful.")
+            self.log("EXPORTED.")
 
     def save_chart(self):
         path = filedialog.asksaveasfilename(defaultextension=".png", filetypes=[("PNG", "*.png")])
